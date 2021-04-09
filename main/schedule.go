@@ -101,9 +101,9 @@ func (b *HandleWorkerBuffer) HandlerReport(eventno string, commit bool) {
 	defer b.Unlock()
 	w := b.handleWorkMap[eventno]
 	if commit {
-		w.Commit()
+		w.TaskDone()
 	} else {
-		w.RollBack()
+		w.TaskFailed()
 	}
 }
 
