@@ -1,4 +1,4 @@
-package accessor
+package element
 
 type RequestType uint32
 

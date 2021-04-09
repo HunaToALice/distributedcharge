@@ -1,14 +1,21 @@
 package accessor
 
-type Client struct {
+import (
+	"distributedcharge/element"
+)
+
+type ChargeRpc struct {
 }
 
-func (c *Client) ChargePart(t *Transaction, uuid string) {
+func (s *ChargeRpc) Requst(*element.ChargeRequest) {
+
 }
 
-func (c *Client) Commit(eventno string, uuid string, iscommit bool) {
+func (s *ChargeRpc) ChargePart(uuid string, t *element.Transaction) {
 }
 
-func (c *Client) ReportResult(eventno string, result bool) {
+func (s *ChargeRpc) Commit(eventno string, uuid string, iscommit bool) {
+}
 
+func (s *ChargeRpc) ReportResult(eventno string, result bool) {
 }

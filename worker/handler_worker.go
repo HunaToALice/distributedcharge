@@ -3,13 +3,14 @@ package worker
 import (
 	"context"
 	"distributedcharge/accessor"
+	"distributedcharge/element"
 	"fmt"
 )
 
 type HandleWorker struct {
 	eventno string
-	client  *accessor.Client
-	trans   *accessor.Transaction
+	client  *accessor.ChargeRpc
+	trans   *element.Transaction
 	dao     accessor.Dao
 	done    chan bool
 	failed  chan bool
@@ -17,8 +18,8 @@ type HandleWorker struct {
 
 func NewHandleWorker(
 	dao accessor.Dao,
-	trans *accessor.Transaction,
-	client *accessor.Client,
+	trans *element.Transaction,
+	client *accessor.ChargeRpc,
 	eventno string) *HandleWorker {
 
 	w := &HandleWorker{
@@ -39,20 +40,19 @@ func (w *HandleWorker) Start(ctx context.Context) {
 	} else {
 		w.client.ReportResult(w.eventno, true)
 	}
-	for {
-		select {
-		case <-w.done:
-			w.Commit()
-		case <-w.failed:
-			w.RollBack()
-		case <-ctx.Done():
-			w.RollBack()
-		}
+
+	select {
+	case <-w.done:
+		w.Commit()
+	case <-w.failed:
+		w.RollBack()
+	case <-ctx.Done():
+		w.RollBack()
 	}
 
 }
 
-func (w *HandleWorker) Execute(stmts []accessor.Stmts) error {
+func (w *HandleWorker) Execute(stmts []element.Stmts) error {
 	/*-----------------------
 		lock line
 		select old value and eventno
@@ -64,9 +64,9 @@ func (w *HandleWorker) Execute(stmts []accessor.Stmts) error {
 		balance := w.dao.GetBalance(s.Account)
 		var newbalance int32
 		switch s.OP {
-		case accessor.Add:
+		case element.Add:
 			newbalance = balance + s.Num
-		case accessor.Minux:
+		case element.Minux:
 			if (balance - s.Num) < 0 {
 				return fmt.Errorf("%s:%d Insufficient balance", w.eventno, s.Account)
 			}
@@ -99,4 +99,20 @@ func (w *HandleWorker) Commit() {
 		w.dao.ClearTempBalance(s.Account)
 		w.dao.UnlockAccout(s.Account)
 	}
+}
+
+func (w *HandleWorker) TaskDone() {
+	w.done <- true
+}
+
+func (w *HandleWorker) TaskFailed() {
+	w.failed <- true
+}
+
+func (w *HandleWorker) GetType() WorkerType {
+	return HandleType
+}
+
+func (w *HandleWorker) GetEventno() string {
+	return w.eventno
 }
