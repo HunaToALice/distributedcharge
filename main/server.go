@@ -12,7 +12,8 @@ type ChargeRpcServer struct {
 
 func (s *ChargeRpcServer) Requst(crq *element.ChargeRequest) {
 	eventno := s.ep.GetEventno()
-	s.explainer.ExplainChargeRequest(crq, eventno)
+	cw := s.explainer.ExplainChargeRequest(crq, eventno)
+	s.schedule.PutControlWorker(eventno, cw)
 }
 
 func (s *ChargeRpcServer) ChargePart(eventno string, t *element.Transaction) {
